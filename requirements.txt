@@ -1,4 +1,6 @@
 discord.py[voice]
-youtube_dl
+discord.py
+yt-dlp
 ffmpeg
 PyNaCl
+
