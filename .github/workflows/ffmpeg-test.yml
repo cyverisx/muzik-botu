@@ -1,0 +1,14 @@
+name: FFmpeg Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-ffmpeg:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Check FFmpeg version
+        run: ffmpeg -version
