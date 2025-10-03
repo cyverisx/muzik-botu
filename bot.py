@@ -1,8 +1,7 @@
-import os
 import discord
 from discord.ext import commands
-import yt_dlp as youtube_dl
-import asyncio
+import youtube_dl
+import os
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -12,10 +11,10 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 queues = {}
 
 def check_queue(ctx, id):
-    if queues[id] != []:
+    if id in queues and queues[id] != []:
         voice = ctx.guild.voice_client
         source = queues[id].pop(0)
-        player = voice.play(source, after=lambda x=None: check_queue(ctx, ctx.message.guild.id))
+        voice.play(source, after=lambda x=None: check_queue(ctx, id))
 
 @bot.event
 async def on_ready():
@@ -37,47 +36,42 @@ async def cal(ctx, *, url):
     elif ctx.voice_client.channel != channel:
         await ctx.voice_client.move_to(channel)
 
-    ydl_opts = {"format": "bestaudio"}
-  ydl_opts = {
-    'format': 'bestaudio/best',
-    'noplaylist': True,
-    'quiet': True,
-    'default_search': 'ytsearch',
-    'extract_flat': False,
-}
+    ytdl_opts = {
+        'format': 'bestaudio/best',
+        'noplaylist': True,
+        'quiet': True,
+        'default_search': 'ytsearch',
+        'extract_flat': False,
+    }
 
-with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-    info = ydl.extract_info(url, download=False)
+    with youtube_dl.YoutubeDL(ytdl_opts) as ydl:
+        info = ydl.extract_info(url, download=False)
+        url2 = info['url']
+        source = await discord.FFmpegOpusAudio.from_probe(url2, **{'options': '-vn'})
 
-        URL = info["url"]
-
-    voice = ctx.guild.voice_client
-    source = await discord.FFmpegOpusAudio.from_probe(URL, method="fallback")
-
-    if not voice.is_playing():
-        voice.play(source, after=lambda x=None: check_queue(ctx, ctx.message.guild.id))
-        await ctx.send(f"🎶 Şimdi çalıyor: **{info['title']}**")
-    else:
-        guild_id = ctx.message.guild.id
-        if guild_id in queues:
-            queues[guild_id].append(source)
+        voice = ctx.guild.voice_client
+        if not voice.is_playing():
+            voice.play(source, after=lambda x=None: check_queue(ctx, ctx.guild.id))
+            await ctx.send(f"🎶 Şimdi çalıyor: **{info['title']}**")
         else:
-            queues[guild_id] = [source]
-        await ctx.send(f"✅ Kuyruğa eklendi: **{info['title']}**")
+            guild_id = ctx.guild.id
+            if guild_id in queues:
+                queues[guild_id].append(source)
+            else:
+                queues[guild_id] = [source]
+            await ctx.send(f"✅ Kuyruğa eklendi: **{info['title']}**")
 
 @bot.command()
 async def dur(ctx):
     if ctx.voice_client:
-        await ctx.voice_client.stop()
-        await ctx.send("⏹️ Müzik durduruldu!")
+        ctx.voice_client.stop()
+        await ctx.send("⏹ Müzik durduruldu!")
 
 @bot.command()
-async def cik(ctx):
+async def cık(ctx):
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
         await ctx.send("👋 Kanaldan ayrıldım!")
 
-# TOKENİ BURADAN ÇEKECEK
+# TOKEN
 bot.run(os.getenv("DISCORD_TOKEN"))
-
-
