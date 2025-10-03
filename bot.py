@@ -38,8 +38,17 @@ async def cal(ctx, *, url):
         await ctx.voice_client.move_to(channel)
 
     ydl_opts = {"format": "bestaudio"}
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
+  ydl_opts = {
+    'format': 'bestaudio/best',
+    'noplaylist': True,
+    'quiet': True,
+    'default_search': 'ytsearch',
+    'extract_flat': False,
+}
+
+with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+    info = ydl.extract_info(url, download=False)
+
         URL = info["url"]
 
     voice = ctx.guild.voice_client
@@ -70,4 +79,5 @@ async def cik(ctx):
 
 # TOKENİ BURADAN ÇEKECEK
 bot.run(os.getenv("DISCORD_TOKEN"))
+
 
