@@ -12,7 +12,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 YDL_OPTIONS = {
     'format': 'bestaudio/best',
     'noplaylist': True,
-    'default_search': 'ytsearch',  # isimle arama için
+    'default_search': 'ytsearch',  # isimle arama yapabilsin
     'quiet': True
 }
 FFMPEG_OPTIONS = {
@@ -22,7 +22,7 @@ FFMPEG_OPTIONS = {
 
 @bot.event
 async def on_ready():
-    print(f'{bot.user} olarak giriş yapıldı!')
+    print(f'✅ {bot.user} olarak giriş yapıldı!')
 
 # Şarkı çalma
 @bot.command(name="çal")
@@ -47,7 +47,7 @@ async def play(ctx, *, search: str):
     title = data.get("title", "Bilinmeyen Müzik")
 
     voice_client.stop()
-    voice_client.play(discord.FFmpegPCMAudio(url2, **FFMPEG_OPTIONS))
+    voice_client.play(discord.FFmpegOpusAudio(url2, **FFMPEG_OPTIONS))
 
     await ctx.send(f"🎶 Şimdi çalıyor: **{title}**\n🔗 {data.get('webpage_url', search)}")
 
@@ -58,19 +58,5 @@ async def stop(ctx):
     if voice_client and voice_client.is_playing():
         voice_client.stop()
         await ctx.send("⏹️ Müzik durduruldu!")
-
-# Kanaldan çık
-@bot.command(name="çık")
-async def leave(ctx):
-    voice_client = discord.utils.get(bot.voice_clients, guild=ctx.guild)
-    if voice_client:
-        await voice_client.disconnect()
-        await ctx.send("👋 Kanaldan ayrıldım!")
-
-# Şarkı geç
-@bot.command(name="geç")
-async def skip(ctx, *, search: str):
-    await play(ctx, search=search)
-
-# Token (GitHub Secrets'ten gelecek)
-bot.run(os.getenv("DISCORD_TOKEN"))
+    else:
+        await c
