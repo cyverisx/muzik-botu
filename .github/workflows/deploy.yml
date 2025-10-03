@@ -2,9 +2,9 @@ name: Discord Bot
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   run-bot:
@@ -24,8 +24,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: ffmpeg yükle
+      run: sudo apt-get install -y ffmpeg
+
     - name: Botu çalıştır
+      run: python bot.py
       env:
         DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-      run: |
-        python bot.py
