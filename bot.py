@@ -20,11 +20,12 @@ ytdl_format_options = {
     'ignoreerrors': False,
     'quiet': True,
     'no_warnings': True,
-    'default_search': 'ytsearch',  # burada arama özelliğini açıyoruz
+    'default_search': 'ytsearch',  # arama özelliği açık
     'source_address': '0.0.0.0'
 }
 
 ffmpeg_options = {
+    'before_options': '-nostdin -reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
     'options': '-vn'
 }
 
