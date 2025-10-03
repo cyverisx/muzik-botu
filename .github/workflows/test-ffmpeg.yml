@@ -1,0 +1,18 @@
+name: Test FFmpeg
+
+on:
+  workflow_dispatch:
+
+jobs:
+  install-ffmpeg:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup FFmpeg
+      uses: FedericoCarboni/setup-ffmpeg@v2
+
+    - name: Check FFmpeg Version
+      run: ffmpeg -version
