@@ -1,7 +1,7 @@
 import os
 import discord
 from discord.ext import commands
-import youtube_dl
+import yt_dlp as youtube_dl
 import asyncio
 
 intents = discord.Intents.default()
@@ -70,3 +70,4 @@ async def cik(ctx):
 
 # TOKENİ BURADAN ÇEKECEK
 bot.run(os.getenv("DISCORD_TOKEN"))
+
