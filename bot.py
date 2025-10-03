@@ -1,77 +1,95 @@
+import os
 import discord
 from discord.ext import commands
-import youtube_dl
-import os
+import yt_dlp as youtube_dl
+import asyncio
 
 intents = discord.Intents.default()
 intents.message_content = True
 intents.voice_states = True
+
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-queues = {}
+# Youtube-dl ayarları
+ytdl_format_options = {
+    'format': 'bestaudio/best',
+    'outtmpl': 'downloads/%(id)s.%(ext)s',
+    'restrictfilenames': True,
+    'noplaylist': True,
+    'nocheckcertificate': True,
+    'ignoreerrors': False,
+    'quiet': True,
+    'no_warnings': True,
+    'default_search': 'ytsearch',  # burada arama özelliğini açıyoruz
+    'source_address': '0.0.0.0'
+}
 
-def check_queue(ctx, id):
-    if id in queues and queues[id] != []:
-        voice = ctx.guild.voice_client
-        source = queues[id].pop(0)
-        voice.play(source, after=lambda x=None: check_queue(ctx, id))
+ffmpeg_options = {
+    'options': '-vn'
+}
 
+ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+
+# Bot hazır olduğunda
 @bot.event
 async def on_ready():
-    print(f"{bot.user} olarak giriş yapıldı!")
+    print(f"{bot.user} olarak giriş yapıldı.")
 
+# Basit ping komutu
 @bot.command()
 async def ping(ctx):
     await ctx.send("Pong!")
 
-@bot.command()
-async def cal(ctx, *, url):
-    if not ctx.author.voice:
-        await ctx.send("❌ Önce bir ses kanalına katılmalısın!")
-        return
-
-    channel = ctx.author.voice.channel
-    if ctx.voice_client is None:
+# Ses kanalına katıl
+@bot.command(name="katıl")
+async def join(ctx):
+    if ctx.author.voice:
+        channel = ctx.author.voice.channel
         await channel.connect()
-    elif ctx.voice_client.channel != channel:
-        await ctx.voice_client.move_to(channel)
+        await ctx.send(f"🔊 {channel} kanalına katıldım!")
+    else:
+        await ctx.send("Önce bir ses kanalına gir!")
 
-    ytdl_opts = {
-        'format': 'bestaudio/best',
-        'noplaylist': True,
-        'quiet': True,
-        'default_search': 'ytsearch',
-        'extract_flat': False,
-    }
-
-    with youtube_dl.YoutubeDL(ytdl_opts) as ydl:
-        info = ydl.extract_info(url, download=False)
-        url2 = info['url']
-        source = await discord.FFmpegOpusAudio.from_probe(url2, **{'options': '-vn'})
-
-        voice = ctx.guild.voice_client
-        if not voice.is_playing():
-            voice.play(source, after=lambda x=None: check_queue(ctx, ctx.guild.id))
-            await ctx.send(f"🎶 Şimdi çalıyor: **{info['title']}**")
-        else:
-            guild_id = ctx.guild.id
-            if guild_id in queues:
-                queues[guild_id].append(source)
-            else:
-                queues[guild_id] = [source]
-            await ctx.send(f"✅ Kuyruğa eklendi: **{info['title']}**")
-
-@bot.command()
-async def dur(ctx):
-    if ctx.voice_client:
-        ctx.voice_client.stop()
-        await ctx.send("⏹ Müzik durduruldu!")
-
-@bot.command()
-async def cık(ctx):
+# Ses kanalından ayrıl
+@bot.command(name="ayrıl")
+async def leave(ctx):
     if ctx.voice_client:
         await ctx.voice_client.disconnect()
-        await ctx.send("👋 Kanaldan ayrıldım!")
+        await ctx.send("❌ Kanaldan ayrıldım.")
+    else:
+        await ctx.send("Ben zaten bir ses kanalında değilim.")
 
-# TOKEN
+# Müzik çal (hem isim hem link çalışır)
+@bot.command(name="çal")
+async def play(ctx, *, search: str):
+    if not ctx.voice_client:
+        if ctx.author.voice:
+            channel = ctx.author.voice.channel
+            await channel.connect()
+        else:
+            return await ctx.send("Önce bir ses kanalına gir!")
+
+    vc = ctx.voice_client
+
+    loop = asyncio.get_event_loop()
+    data = await loop.run_in_executor(None, lambda: ytdl.extract_info(search, download=False))
+
+    if "entries" in data:  # Eğer arama yapıldıysa
+        data = data["entries"][0]
+
+    url2 = data["url"]
+    vc.stop()
+    vc.play(discord.FFmpegPCMAudio(url2, **ffmpeg_options))
+    await ctx.send(f"🎶 Şimdi oynatılıyor: **{data['title']}**")
+
+# Müziği durdur
+@bot.command(name="durdur")
+async def stop(ctx):
+    if ctx.voice_client and ctx.voice_client.is_playing():
+        ctx.voice_client.stop()
+        await ctx.send("⏹ Müzik durduruldu.")
+    else:
+        await ctx.send("Şu anda çalan bir şey yok.")
+
+# Token Github Secrets'ten alınacak
 bot.run(os.getenv("DISCORD_TOKEN"))
