@@ -1,0 +1,30 @@
+name: Run Discord Bot
+
+on:
+  workflow_dispatch:   # Manuel başlatmak için
+  push:
+    branches: [ main ] # main branch'e push olduğunda da çalışır
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+
+    - name: Install FFmpeg
+      run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Run bot
+      env:
+        DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+      run: python bot.py
